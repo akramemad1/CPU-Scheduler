@@ -9,7 +9,8 @@ from gui.tables import ProcessTableWidget, StatsWidget
 from PyQt5 import QtCore, QtGui
 from core.simulator import Simulator
 from core.schedulers.fcfs import FCFSScheduler
-#from core.schedulers.sjf import SJFScheduler
+from core.schedulers.sjf import SJFScheduler
+from core.schedulers.srtf import SRTFScheduler
 #from core.schedulers.round_robin import RoundRobinScheduler
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -51,8 +52,14 @@ class MainWindow(QMainWindow):
             scheduler_type = self.controls.get_scheduler_type()
             if scheduler_type == "FCFS":
                 scheduler = FCFSScheduler()
-            #elif scheduler_type == "SJF":
-             #   scheduler = SJFScheduler()
+            elif scheduler_type == "SJF":
+                scheduler = SJFScheduler()
+            elif scheduler_type == "SRTF":
+                scheduler = SRTFScheduler()
+
+
+
+                
             #elif scheduler_type == "Round Robin":
                # quantum = self.controls.quantum_input.value() if hasattr(self.controls, "quantum_input") else 2
                # scheduler = RoundRobinScheduler(quantum)
