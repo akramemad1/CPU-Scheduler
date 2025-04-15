@@ -3,7 +3,9 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                             QTableWidgetItem, QSpinBox, QHeaderView, QMessageBox)
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, Qt
-
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QSize
+import math
 class ControlsWidget(QWidget):
     start_clicked = pyqtSignal()
     process_confirmed = pyqtSignal(dict)
@@ -11,6 +13,7 @@ class ControlsWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.simulator = None  # ← placeholder
 
     def init_ui(self):
         main_layout = QHBoxLayout()
@@ -33,8 +36,10 @@ class ControlsWidget(QWidget):
 
         # Process table
         controls_layout.addWidget(QLabel("Processes:"))
-        self.process_table = QTableWidget(2, 3)
+        self.process_table = QTableWidget(3, 3)
         self.process_table.setHorizontalHeaderLabels(["Name", "Arrival", "Burst"])
+        self.process_table.setMinimumHeight(150)  # or any value that fits your layout
+        self.process_table.setMinimumWidth(100)
         self.process_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setup_table_validation()
         controls_layout.addWidget(self.process_table)
@@ -42,12 +47,18 @@ class ControlsWidget(QWidget):
         # Process row buttons
         self.process_box = QHBoxLayout()
         self.add_row_button = QPushButton("Add Process")
+        self.add_row_button.setIcon(QIcon("icons/leaves-3-svgrepo-com.svg"))
+        self.add_row_button.setIconSize(QSize(24, 24))
         self.add_row_button.clicked.connect(self.add_process_row)
         self.process_box.addWidget(self.add_row_button)
         self.remove_row_button = QPushButton("Remove Process")
+        self.remove_row_button.setIcon(QIcon("icons/tree-2-svgrepo-com.svg"))
+        self.remove_row_button.setIconSize(QSize(24, 24))
         self.remove_row_button.clicked.connect(self.remove_process_row)
         self.process_box.addWidget(self.remove_row_button)
         self.confirm_add_button = QPushButton("Confirm Add")
+        self.confirm_add_button.setIcon(QIcon("icons/bird-svgrepo-com.svg"))
+        self.confirm_add_button.setIconSize(QSize(24, 24))
         self.confirm_add_button.clicked.connect(self.confirm_add_process)
         self.process_box.addWidget(self.confirm_add_button)
         controls_layout.addLayout(self.process_box)
@@ -56,6 +67,8 @@ class ControlsWidget(QWidget):
         controls_layout.addLayout(self.dynamic_layout)
 
         self.start_button = QPushButton("Start Simulation")
+        self.start_button.setIcon(QIcon("icons/leaves-2-svgrepo-com.svg"))
+        self.start_button.setIconSize(QSize(24, 24))
         self.start_button.clicked.connect(self.start_clicked.emit)
         controls_layout.addWidget(self.start_button)
 
@@ -64,12 +77,16 @@ class ControlsWidget(QWidget):
         # Optional image section
         image_label = QLabel()
         pixmap = QtGui.QPixmap("dino2.png")
-        image_label.setPixmap(pixmap.scaledToWidth(200, QtCore.Qt.SmoothTransformation))
+        image_label.setPixmap(pixmap.scaledToWidth(300, QtCore.Qt.SmoothTransformation))
         image_label.setAlignment(Qt.AlignLeft)
         main_layout.addWidget(image_label)
 
         self.setLayout(main_layout)
         self.update_scheduler_fields()
+
+
+    def set_simulator(self, simulator):
+        self.simulator = simulator
 
     def toggle_live_mode(self, state):
         self.add_row_button.setVisible(state == Qt.Checked)
@@ -85,6 +102,7 @@ class ControlsWidget(QWidget):
         if scheduler_type == "Round Robin":
             self.quantum_label = QLabel("Quantum:")
             self.quantum_input = QSpinBox()
+            self.quantum_input.setFixedWidth(80)
             self.quantum_input.setRange(1, 100)
             self.dynamic_layout.addWidget(self.quantum_label)
             self.dynamic_layout.addWidget(self.quantum_input)
@@ -135,6 +153,7 @@ class ControlsWidget(QWidget):
             if last_row < 0:
                 raise ValueError("No process to add")
             process = self._get_validated_process(last_row)
+            process['arrival'] = self.simulator.current_time + 1
             self.process_confirmed.emit(process)
             
         except ValueError as e:
@@ -144,9 +163,8 @@ class ControlsWidget(QWidget):
         name = self._get_item_text(row, 0)
         if not name:
             raise ValueError("Process name cannot be empty")
-        arrival = int(self._get_item_text(row, 1))
         burst = int(self._get_item_text(row, 2))
-        process = {'name': name, 'arrival': arrival, 'burst': burst}
+        process = {'name': name,  'burst': burst}
         scheduler_type = self.get_scheduler_type()
         if "Priority" in scheduler_type:
             process['priority'] = int(self._get_item_text(row, 3))

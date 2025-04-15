@@ -1,6 +1,6 @@
 # gui/tables.py
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QHeaderView
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy
 from PyQt5.QtCore import  Qt
 
 class ProcessTableWidget(QWidget):
@@ -15,6 +15,9 @@ class ProcessTableWidget(QWidget):
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
+        self.table.setFixedHeight(200)  # or any value that fits your layout
+        self.table.setFixedWidth(450)
+        
         self.table.setHorizontalHeaderLabels(["Name", "Arrival", "Burst", "Remaining"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
@@ -48,7 +51,7 @@ class ProcessTableWidget(QWidget):
             if name not in current_processes:
                 self.table.removeRow(row)
 
-        self.table.resizeColumnsToContents()
+        
 
 class StatsWidget(QWidget):
     def __init__(self):
@@ -60,11 +63,12 @@ class StatsWidget(QWidget):
         self.label = QLabel("Statistics")
         layout.addWidget(self.label)
 
-        self.avg_wt_label = QLabel("Avg Waiting Time: -")
-        self.avg_tat_label = QLabel("Avg Turnaround Time: -")
+        self.avg_wt_label = QLabel("Average Waiting Time: -")
+        self.avg_tat_label = QLabel("Average Turnaround Time: -")
 
         layout.addWidget(self.avg_wt_label)
         layout.addWidget(self.avg_tat_label)
+
 
         self.setLayout(layout)
 
