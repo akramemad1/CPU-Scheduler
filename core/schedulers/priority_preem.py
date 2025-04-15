@@ -1,4 +1,5 @@
 class priority_preem:
+    is_preemptive = True
     def schedule(self , processes):
         """
         Returns a list of dicts:
@@ -14,10 +15,9 @@ class priority_preem:
         
         while processes or current_process or ready_queue:
             # choose the process with highest priority and proper arrival time
-            for p in processes:
-                if p["arrival"]<=current_time:
-                    ready_queue.append(p)
-                    processes.remove(p)
+            arrived_now = [p for p in processes if p['arrival'] <= current_time]
+            processes = [p for p in processes if p['arrival'] > current_time]
+            ready_queue.extend(arrived_now)
             # sort the ready queue by priority and arrival time (if two processes have same priority then earlier arrival time have higher hand)      
             ready_queue.sort(key=lambda x: (x['priority'], x['arrival']))
             current_process = ready_queue.pop(0)
@@ -30,7 +30,8 @@ class priority_preem:
                 'arrival': current_process['arrival'],
                 'burst': current_process['burst'],
                 'duration': 1,
-                'start': current_time - 1
+                'start': current_time - 1,
+                'priority': current_process['priority']
             })
             # if the current process is finished, remove it from the remaining time
             if remaining[current_process['name']] == 0:
@@ -41,7 +42,7 @@ class priority_preem:
                 ready_queue.append(current_process)
                 current_process = None
             
-        return timeline  # Return the scheduled list with updated start times
+        return sorted(timeline, key=lambda p: p['priority'])  # Return the scheduled list with updated start times
     
 """
 # Example usage:

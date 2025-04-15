@@ -1,22 +1,21 @@
 class FCFSScheduler:
+    is_preemptive = False
+
     def schedule(self, processes):
-        """
-        Returns a list of dicts:
-        Each dict contains: name, arrival, burst, duration, start time
-        """
-        processes = sorted(processes, key=lambda p: p['arrival'])  # Sort processes by arrival time
-        current_time = 0
-        timeline = []
+        # Sort by arrival
+        processes = sorted(processes, key=lambda p: p['arrival'])
+
+        current_time = max([p.get('ran', 0) + p['arrival'] for p in processes], default=0)
 
         for p in processes:
-            start = max(p['arrival'], current_time)  # Start after arrival or current_time, whichever is later
-            timeline.append({
-                'name': p['name'],
-                'arrival': p['arrival'],
-                'burst': p['burst'],
-                'duration': p['burst'],
-                'start': start
-            })
-            current_time = start + p['burst']  # Update current time after process finishes
+            ran = p.get('ran', 0)
+            if ran < p['burst']:
+                return [{
+                    'name': p['name'],
+                    'arrival': p['arrival'],
+                    'burst': p['burst'],
+                    'duration': 1,
+                    'start': None
+                }]
 
-        return timeline  # Return the scheduled list with updated start times
+        return []

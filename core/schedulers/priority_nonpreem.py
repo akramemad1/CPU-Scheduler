@@ -39,3 +39,31 @@ class PriorityNonPreemptiveScheduler:
             # Return to step 2
         
         return timeline
+
+
+
+"""
+test1 = [
+        {'name': 'P1', 'arrival': 0, 'burst': 4, 'priority': 2},
+        {'name': 'P2', 'arrival': 0, 'burst': 3, 'priority': 1},  # Higher priority
+        {'name': 'P3', 'arrival': 0, 'burst': 5, 'priority': 3}
+    ]
+test2 = [
+         {'name': 'P1', 'arrival': 2, 'burst': 4, 'priority': 1},
+         {'name': 'P2', 'arrival': 0, 'burst': 3, 'priority': 1},  # Earlier arrival
+         {'name': 'P3', 'arrival': 1, 'burst': 2, 'priority': 1}    
+    ]
+test3 = [
+         {'name': 'P1', 'arrival': 0, 'burst': 2, 'priority': 1},
+         {'name': 'P2', 'arrival': 5, 'burst': 3, 'priority': 1}  # Arrives later
+    
+    ]
+test4 = [
+        {'name': 'P1', 'arrival': 0, 'burst': 2, 'priority': 3},
+        {'name': 'P2', 'arrival': 1, 'burst': 4, 'priority': 1},  # Higher priority
+        {'name': 'P3', 'arrival': 2, 'burst': 1, 'priority': 2}
+    ]
+scheduler = PriorityNonPreemptiveScheduler()
+timeline = scheduler.schedule(test4)
+for entry in timeline:
+    print(entry) """

@@ -1,8 +1,10 @@
 from collections import deque
 
-class RoundRobinScheduler:
+class RRScheduler:
+    is_preemptive = True
     def __init__(self, quantum=2):
         self.quantum = quantum
+        print(quantum)
     
     def schedule(self, processes):
         processes = sorted(processes, key=lambda p: p['arrival'])
