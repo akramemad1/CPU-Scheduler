@@ -15,6 +15,9 @@ class ControlsWidget(QWidget):
         super().__init__()
         self.init_ui()
         self.simulator = None  # ← placeholder
+        self.has_pending_process = False  # Track if there's an unconfirmed process
+
+
 
     def init_ui(self):
         main_layout = QHBoxLayout()
@@ -202,12 +205,26 @@ class ControlsWidget(QWidget):
             last_row = self.process_table.rowCount() - 1
             if last_row < 0:
                 raise ValueError("No process to add")
+            
+            # Only check pending process flag during simulation
+            if hasattr(self, 'simulator') and self.simulator and self.simulator.isRunning():
+                if not self.has_pending_process:
+                    raise ValueError("No process to confirm")
+                self.has_pending_process = False
+            
+            self.set_arrival_column_readonly(True)
             process = self._get_validated_process(last_row)
             process['arrival'] = self.simulator.current_time + 1
             self.process_confirmed.emit(process)
-            
+            self.has_pending_process = False  # THIS IS CRUCIAL - reset after confirmation
+
         except ValueError as e:
             self._show_error(str(e))
+
+
+
+
+
 
     def _get_validated_process(self, row):
         name = self._get_item_text(row, 0)
@@ -229,17 +246,41 @@ class ControlsWidget(QWidget):
     def _show_error(self, message):
         QMessageBox.warning(self, "Error", message)
 
+   
+            
+      
     def add_process_row(self):
+        # Only enforce single pending process during simulation
+        if hasattr(self, 'simulator') and self.simulator and self.simulator.isRunning():
+            if self.has_pending_process:
+                QMessageBox.warning(self, "Pending Process", 
+                                "Please confirm the current process before adding another one")
+                return
+            self.has_pending_process = True
+        
         row = self.process_table.rowCount()
         self.process_table.insertRow(row)
+        
         for col in range(self.process_table.columnCount()):
             item = QTableWidgetItem("0" if col > 0 else "")
+            
+            # During simulation, arrival is auto-set and read-only
+            if hasattr(self, 'simulator') and self.simulator and self.simulator.isRunning() and col == 1:
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                item.setText("-")
+                
             self.process_table.setItem(row, col, item)
 
     def remove_process_row(self):
         row = self.process_table.currentRow()
         if row >= 0:
+            if hasattr(self, 'simulator') and self.simulator and self.simulator.isRunning():
+                if row == self.process_table.rowCount() - 1 and self.has_pending_process:
+                    self.has_pending_process = False
             self.process_table.removeRow(row)
+
+
+
 
     def setup_table_validation(self):
         for row in range(self.process_table.rowCount()):
@@ -248,3 +289,14 @@ class ControlsWidget(QWidget):
                 item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 item.setData(Qt.DisplayRole, "0")
                 self.process_table.setItem(row, col, item)
+
+
+    def set_arrival_column_readonly(self, readonly):
+        """Set the arrival column to be read-only or editable"""
+        for row in range(self.process_table.rowCount()):
+            item = self.process_table.item(row, 1)  # Column 1 is Arrival
+            if item:
+                if readonly:
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() | Qt.ItemIsEditable)           

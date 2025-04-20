@@ -162,6 +162,9 @@ class MainWindow(QMainWindow):
                 )
 
             self.controls.set_simulator(self.simulator)
+            self.controls.has_pending_process = False  
+
+
             self.simulator.update_gantt.connect(self.gantt_chart.add_block)
             self.simulator.update_table.connect(self.table_widget.update_table)
             self.simulator.update_stats.connect(self.stats_widget.update_stats)
@@ -198,6 +201,9 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", str(e))
 
     def simulation_complete(self):
+        self.controls.set_arrival_column_readonly(False)
+        self.controls.has_pending_process = False  
+ 
         msg = QMessageBox(self)
         msg.setWindowTitle("Done")
         msg.setText("Simulation finished!")
