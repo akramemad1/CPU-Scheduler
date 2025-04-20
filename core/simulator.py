@@ -77,6 +77,10 @@ class Simulator(QThread):
             scheduled = []
             current_process = None
 
+            for p in self.processes:
+                if p['burst'] == 0 and p['name'] not in self._executed_time:
+                    self._executed_time[p['name']] = 0  # Or some appropriate time
+
             while self.running:
                 if all(p['name'] in self._executed_time for p in self.processes):
                     print("leaving the while loop")
@@ -105,6 +109,7 @@ class Simulator(QThread):
                     sleep_or_mwait(self.live, self.time_unit)
                     self.current_time += 1
                     continue
+                
 
                 already_ran = self._run_time.get(current_process['name'], 0)
                 remaining = current_process['burst'] - already_ran

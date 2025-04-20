@@ -19,8 +19,8 @@ class GanttChartWidget(QGraphicsView):
 
         self.process_colors = {}
         self.current_time = 0
-        self.block_width = 45
-        self.block_height = 55
+        self.block_width = 55
+        self.block_height = 65
         self.sound = QSoundEffect()
         sound_path = os.path.join(os.path.dirname(__file__), "../mixkit-hard-pop-click-2364.wav")
         self.sound.setSource(QUrl.fromLocalFile(sound_path))
@@ -60,15 +60,15 @@ class GanttChartWidget(QGraphicsView):
         # Process label (inside block)
         text = QGraphicsTextItem(process_name)
         text.setDefaultTextColor(text_color)
-        text.setFont(QFont("Poppins", 15))
+        text.setFont(QFont("Poppins", 20))
         text.setPos(x + 8, 8)
         text.setZValue(1)
         self.scene.addItem(text)
 
         # Time label (below block)
         time_text = QGraphicsTextItem(str(time_unit))
-        time_text.setDefaultTextColor(Qt.darkGray)
-        time_text.setFont(QFont("Segoe UI", 10))
+        time_text.setDefaultTextColor(Qt.white)
+        time_text.setFont(QFont("Segoe UI", 15))
         time_text.setPos(x , self.block_height + 5)
         self.scene.addItem(time_text)
         self.sound.play()

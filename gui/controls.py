@@ -5,6 +5,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QMovie
 import math
 class ControlsWidget(QWidget):
     start_clicked = pyqtSignal()
@@ -18,6 +19,7 @@ class ControlsWidget(QWidget):
     def init_ui(self):
         main_layout = QHBoxLayout()
         controls_layout = QVBoxLayout()
+        
 
         # Scheduler dropdown
         hlayout = QHBoxLayout()
@@ -33,6 +35,11 @@ class ControlsWidget(QWidget):
         self.live_checkbox.stateChanged.connect(self.toggle_live_mode)
         hlayout.addWidget(self.live_checkbox)
         controls_layout.addLayout(hlayout)
+
+
+
+
+
 
         # Process table
         controls_layout.addWidget(QLabel("Processes:"))
@@ -74,6 +81,12 @@ class ControlsWidget(QWidget):
 
         main_layout.addLayout(controls_layout)
 
+        
+
+
+
+
+
         # Optional image section
         image_label = QLabel()
         pixmap = QtGui.QPixmap("dino2.png")
@@ -90,6 +103,8 @@ class ControlsWidget(QWidget):
 
     def toggle_live_mode(self, state):
         self.add_row_button.setVisible(state == Qt.Checked)
+
+
 
     def update_scheduler_fields(self):
         for i in reversed(range(self.dynamic_layout.count())):
@@ -129,23 +144,58 @@ class ControlsWidget(QWidget):
 
     def get_processes(self):
         processes = []
+        has_error = False  # Flag to track if any error occurred
+        seen_names = set()
+
         for row in range(self.process_table.rowCount()):
             try:
                 name = self._get_item_text(row, 0)
                 if not name:
                     continue
+
+
+                if name in seen_names:
+                    QMessageBox.warning(self, "Duplicate Process Name", f"Process name '{name}' is duplicated! Please use unique names.")
+                    has_error = True
+                    continue
+                seen_names.add(name)
                 arrival = int(self._get_item_text(row, 1))
                 burst = int(self._get_item_text(row, 2))
+                if burst < 0:
+                    QMessageBox.warning(self, "Invalid Input", f"Burst time cannot be negative for process '{name}'!")
+                    has_error = True
+                    continue  # Skip this process
+                if burst == 0:
+                    QMessageBox.warning(self, "Invalid Input", f"Burst time cannot be Zero for process '{name}'!")
+                    has_error = True
+                    continue  # Skip this process
+
                 process = {'name': name, 'arrival': arrival, 'burst': burst}
                 scheduler_type = self.get_scheduler_type()
                 if "Priority" in scheduler_type:
-                    process['priority'] = int(self._get_item_text(row, 3) or 0)
+                    priority = int(self._get_item_text(row, 3) or 0)
+                    if priority < 0:
+                        QMessageBox.warning(self, "Invalid Input", f"Priority cannot be negative for process '{name}'!")
+                        has_error = True
+                        continue  # Skip this process
+                    process['priority'] = priority
                 elif scheduler_type == "Round Robin":
-                    process['quantum'] = int(self._get_item_text(row, 3) or 1)
+                    quantum = int(self._get_item_text(row, 3) or 1)
+                    process['quantum'] = quantum
                 processes.append(process)
-            except ValueError:
-                continue
-        return processes
+            except ValueError as e:
+                QMessageBox.warning(self, "Invalid Input", f"Invalid number format in process table (row {row + 1})!")
+                has_error = True
+                continue  # Skip this process
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"An unexpected error occurred while reading process data (row {row + 1}): {e}")
+                has_error = True
+                continue  # Skip this process
+
+        if has_error:
+            return []  # Return an empty list if any error occurred
+        else:
+            return processes
 
     def confirm_add_process(self):
         try:

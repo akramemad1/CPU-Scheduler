@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                             QComboBox, QPushButton, QCheckBox, QTableWidget, 
                             QTableWidgetItem, QSpinBox, QHeaderView, QMessageBox)
-from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QStackedLayout
 from gui.controls import ControlsWidget
 from gui.gantt import GanttChartWidget
 from gui.tables import ProcessTableWidget, StatsWidget
@@ -15,11 +15,13 @@ from core.schedulers.fcfs import FCFSScheduler
 from core.schedulers.sjf import SJFScheduler
 from core.schedulers.srtf import SRTFScheduler
 from core.schedulers.priority_preem import priority_preem
+from core.schedulers.priority_nonpreem import PriorityNonPreemptiveScheduler
 from core.schedulers.round_robin import RRScheduler
 from PyQt5.QtMultimedia import QSoundEffect
 from PyQt5.QtCore import QUrl
 import os
 
+from PyQt5.QtGui import QMovie
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -46,33 +48,67 @@ class MainWindow(QMainWindow):
         self.start_sound.setSource(QUrl.fromLocalFile(sound_ppath))
         self.start_sound.setVolume(0.9)
 
+        self.gif_label = QLabel(self)
+        self.movie = QMovie("10-c3794c29-unscreenn.gif")  
+        self.gif_label.setMovie(self.movie)
+        self.gif_label.setFixedSize(500, 500)
+
+
 
 
        
 
         central_widget = QtWidgets.QWidget()
+
+
+        
+        self.setCentralWidget(central_widget)
+
         layout = QVBoxLayout()
         layout.addWidget(self.controls)
+
+
+
+        # GIF label
+        self.gif_label = QLabel()
+        self.movie = QMovie("output-onlinegiftools.gif")
+        self.gif_label.setMovie(self.movie)
+        self.gif_label.hide()  # Hide it initially
+        
+
+     
+
+
+        # Add the container to your layout
         layout.addWidget(self.gantt_chart)
+        
 
         h_layout = QHBoxLayout()
         h_layout.addWidget(self.table_widget)
         h_layout.addWidget(self.stats_widget)
-        layout.addLayout(h_layout)
+        h_layout.addWidget(self.gif_label)
 
+        
+        layout.addLayout(h_layout)
         central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
 
         self.controls.start_clicked.connect(self.start_simulation)
         self.controls.process_confirmed.connect(self.handle_confirmed_process)
+
+
+
+
+
 
     def start_simulation(self):
         try:
             
             processes = self.controls.get_processes()
             if not processes:
-                QMessageBox.warning(self, "Error", "Add at least one process")
-                return
+                # An error occurred during process retrieval, so don't start the simulation
+                QMessageBox.warning(self, "Error", "Simulation cannot start due to invalid process input. Change the values in order to proceed")
+                print("Simulation cannot start due to invalid process input.")
+                return  # Or potentially disable the start button, etc.
 
             scheduler_type = self.controls.get_scheduler_type()
             if scheduler_type == "FCFS":
@@ -81,8 +117,10 @@ class MainWindow(QMainWindow):
                 scheduler = SJFScheduler()
             elif scheduler_type == "SRTF":
                 scheduler = SRTFScheduler()
-            elif scheduler_type == "Priority (preemptive)" or scheduler_type == "Priority (non-preemptive)":
+            elif scheduler_type == "Priority (preemptive)":
                 scheduler = priority_preem()
+            elif scheduler_type == "Priority (non-preemptive)":
+                scheduler = PriorityNonPreemptiveScheduler()
             elif scheduler_type == "Round Robin":
                 scheduler = RRScheduler()
             else:
@@ -136,6 +174,8 @@ class MainWindow(QMainWindow):
             self.simulation_started = True
 
             self.start_sound.play()
+            self.gif_label.show()
+            self.movie.start()
 
             self.simulator.start()
 
@@ -180,3 +220,4 @@ class MainWindow(QMainWindow):
 
         elif msg.clickedButton() == restart_button:
             self.start_simulation()  
+
