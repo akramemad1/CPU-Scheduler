@@ -19,6 +19,9 @@ def calculate_stats(processes, executed_time):
             wt = tat - proc['burst']
             turnaround_times.append(tat)
             waiting_times.append(wt)
+    print('turn=>',turnaround_times)
+    print('waiting=>',waiting_times)
+
 
     avg_wt = sum(waiting_times) / len(waiting_times) if waiting_times else 0
     avg_tat = sum(turnaround_times) / len(turnaround_times) if turnaround_times else 0

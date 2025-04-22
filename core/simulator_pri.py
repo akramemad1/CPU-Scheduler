@@ -10,6 +10,7 @@ class SimulatorPriority(QThread):
     update_stats = pyqtSignal(float, float)
     simulation_done = pyqtSignal()
     process_added = pyqtSignal()
+    
 
     def __init__(self, scheduler, processes, time_unit=1, live=True):
         super().__init__()
@@ -71,54 +72,71 @@ class SimulatorPriority(QThread):
             while self.running:
                 self.wait_if_paused()
 
+                print(f"\n[Time: {self.current_time}]")
+
                 # Add new processes to the ready queue
                 with self.lock:
                     for proc in self.new_processes:
+                        print(f"[DEBUG] New process added: {proc['name']}")
                         ready_queue.append(proc)
                     self.new_processes.clear()
 
                 # Add arrived processes to the ready queue
                 for proc in self.processes:
                     if proc not in ready_queue and self._run_time.get(proc['name'], 0) < proc['burst'] and proc['arrival'] <= self.current_time:
+                        print(f"[DEBUG] Process {proc['name']} has arrived and added to ready queue")
                         ready_queue.append(proc)
 
                 if self.reschedule_needed or self.current_process is None:
                     if ready_queue:
                         ready_queue.sort(key=lambda p: p.get('priority', float('inf')))
                         if (self.scheduler.is_preemptive and self.current_process is not None and
-                             ready_queue[0].get('priority', float('inf')) < self.current_process.get('priority', float('inf')) and
-                             self._run_time.get(self.current_process['name'], 0) < self.current_process['burst']):
-                            print(f"Preempting {self.current_process['name']} for {ready_queue[0]['name']} at time {self.current_time}")
+                            ready_queue[0].get('priority', float('inf')) < self.current_process.get('priority', float('inf')) and
+                            self._run_time.get(self.current_process['name'], 0) < self.current_process['burst']):
+                            print(f"[DEBUG] Preempting {self.current_process['name']} for {ready_queue[0]['name']}")
                             ready_queue.append(self.current_process)
                             self.current_process = ready_queue.pop(0)
                         elif self.current_process is None and ready_queue:
                             self.current_process = ready_queue.pop(0)
-                        elif ready_queue and self.current_process and self._run_time.get(self.current_process['name'], 0) >= self.current_process['burst']:
-                            self.current_process = None
-                            continue
+                            print(f"[DEBUG] Selected new process NO: {self.current_process['name']}")
                         elif self.current_process is None and not ready_queue:
+                            print("[DEBUG] No process ready")
                             pass
                         elif self.current_process and not ready_queue and self._run_time.get(self.current_process['name'], 0) < self.current_process['burst']:
+                            print(f"[DEBUG] Continuing with current process: {self.current_process['name']}")
                             pass
                         elif ready_queue and self.current_process and ready_queue[0] == self.current_process:
                             pass
                         elif ready_queue and not self.current_process:
                             self.current_process = ready_queue.pop(0)
+                            print(f"[DEBUG] Selected new process YES: {self.current_process['name']}")
                     self.reschedule_needed = False
 
                 if self.current_process:
-                    # Check if the current process has finished BEFORE executing the next time unit
-                    if self._run_time.get(self.current_process['name'], 0) >= self.current_process['burst']:
-                        self._executed_time[self.current_process['name']] = self.current_time
+                    name = self.current_process['name']
+                    run_time = self._run_time.get(name, 0)
+                    burst = self.current_process['burst']
+                    print(f"[DEBUG] Executing {name}: run_time = {run_time}, burst = {burst}")
+
+                    # Check BEFORE running
+                    if run_time >= burst:
+                        print(name, " before", "Executed= ",self.current_time )
+                        self._executed_time[name] = self.current_time
+                        print(name, " after", "Executed= ",self._executed_time[name] )
+                        
+                        print(f"{name} finished at time {self.current_time}")
+                        ready_queue = [process for process in ready_queue if process['name'] != name]
                         self.current_process = None
                         self.reschedule_needed = True
-                        continue # Skip the execution part for this iteration
+                        continue
 
-                    # Execute the current process
-                    self._run_time[self.current_process['name']] = self._run_time.get(self.current_process['name'], 0) + 1
-                    self.update_gantt.emit(self.current_process['name'], self.current_time)
+                    # Only run if not finished
+                    self.update_gantt.emit(name, self.current_time)
                     self.update_table.emit(get_live_table(self.processes, self._run_time))
                     sleep_or_mwait(self.live, self.time_unit)
+
+                    # Then increment
+                    self._run_time[name] = run_time + 1
                     self.current_time += 1
                     self.reschedule_needed = True
 
@@ -126,9 +144,17 @@ class SimulatorPriority(QThread):
                     sleep_or_mwait(self.live, self.time_unit)
                     self.current_time += 1
 
+                # Final check
                 if all(self._run_time.get(p['name'], 0) >= p['burst'] for p in self.processes) and not ready_queue and self.current_process is None:
                     print("All processes completed.")
                     break
+
+            # Final status report
+            print("\n--- Final Status ---")
+            for p in self.processes:
+                name = p['name']
+                run = self._run_time.get(name, 0)
+                print(f"{name}: run_time = {run}, burst = {p['burst']}, executed_time = {self._executed_time.get(name, 'Not finished')}")
 
             avg_wt, avg_tat = calculate_stats(self.processes, self._executed_time)
             self.update_stats.emit(avg_wt, avg_tat)
@@ -142,6 +168,7 @@ class SimulatorPriority(QThread):
             print("Simulation ended")
 
 
+
     def start(self):
         print("Simulator thread starting...")
         super().start()
@@ -149,5 +176,3 @@ class SimulatorPriority(QThread):
 
     def stop(self):
         self.running = False
-
-  
