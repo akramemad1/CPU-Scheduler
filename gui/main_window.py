@@ -19,6 +19,7 @@ from core.schedulers.priority_nonpreem import PriorityNonPreemptiveScheduler
 from core.schedulers.round_robin import RRScheduler
 from PyQt5.QtMultimedia import QSoundEffect
 from PyQt5.QtCore import QUrl
+from PyQt5.QtGui import QIcon
 import os
 
 from PyQt5.QtGui import QMovie
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("CPU Scheduler")
         self.setGeometry(100, 100, 900, 600)
+        self.setWindowIcon(QIcon("icons/dinosaur-svgrepo-com.svg")) 
         
 
         self.controls = ControlsWidget()

@@ -132,12 +132,14 @@ class SimulatorPriority(QThread):
 
                     # Only run if not finished
                     self.update_gantt.emit(name, self.current_time)
-                    self.update_table.emit(get_live_table(self.processes, self._run_time))
+
+                
                     sleep_or_mwait(self.live, self.time_unit)
 
                     # Then increment
                     self._run_time[name] = run_time + 1
                     self.current_time += 1
+                    self.update_table.emit(get_live_table(self.processes, self._run_time))
                     self.reschedule_needed = True
 
                 else:

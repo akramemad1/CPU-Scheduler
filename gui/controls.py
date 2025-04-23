@@ -67,7 +67,7 @@ class ControlsWidget(QWidget):
         self.remove_row_button.clicked.connect(self.remove_process_row)
         self.process_box.addWidget(self.remove_row_button)
         self.confirm_add_button = QPushButton("Confirm Add")
-        self.confirm_add_button.setIcon(QIcon("icons/bird-svgrepo-com.svg"))
+        self.confirm_add_button.setIcon(QIcon("icons/donut-svgrepo-com.svg"))
         self.confirm_add_button.setIconSize(QSize(24, 24))
         self.confirm_add_button.clicked.connect(self.confirm_add_process)
         self.process_box.addWidget(self.confirm_add_button)
